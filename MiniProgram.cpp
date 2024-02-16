@@ -10,6 +10,31 @@
 #include <vector>
 #include <string>
 #include <cstdlib> // for atoi function
+#include <regex>  // For Regular Expression Validation (Utility Class)
+
+class CUtility
+{
+    public :
+        // Function to validate a name
+        static bool isValidName(const std::string& name) {
+            // Name should only contain alphabets and spaces
+            return std::regex_match(name, std::regex("^[a-zA-Z ]+$"));
+        }
+
+        // Function to validate an email address
+        static bool isValidEmail(const std::string& email) {
+            // Regular expression for email validation
+            return std::regex_match(email, std::regex("^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"));
+        }
+        // Function to validate a phone number
+        static bool isValidPhone(const std::string& phone) {
+            // Regular expression for phone number validation
+            return std::regex_match(phone, std::regex("^\\d{10}$"));
+        }
+
+
+
+};
 
 using namespace std;
 
@@ -163,9 +188,8 @@ public:
     }
 };
 
+
 Database* Database::instance = nullptr;
-
-
 
 class User
 {
@@ -193,11 +217,18 @@ public:
 
     void Create_User()
     {
+        std::cout<<"Debug Create_User" <<std::endl;  
+        do{
+                std::cout<<"Enter Name:";
+                std::cin>>Name;
+        }while(!CUtility::isValidName(Name));
+        
+        do{
+                std::cout<<"Enter Email:";
+                std::cin>>Email;
+        
+        }while(!CUtility::isValidEmail(Email));
 
-        std::cout<<"Enter Name:";
-        std::cin>>Name;
-        std::cout<<"Enter Email:";
-        std::cin>>Email;
         std::string sqlStmtInsert = "Insert into Users(Name, Email) Values('" + Name + "','" + Email + "');";
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtInsert<<std::endl;
@@ -272,8 +303,11 @@ public:
         std::cin>>customer_name;
         std::cout<<"Enter Email:";
         std::cin>>customer_email;
-        std::cout<<"Enter sPhone:";
-        std::cin>>customer_phone;
+        do{
+            std::cout<<"Enter sPhone:";
+            std::cin>>customer_phone;
+        }while(!CUtility::isValidPhone(customer_phone));
+
         std::cout<<"Enter sAddress:";
         std::cin>>customer_address;
         
