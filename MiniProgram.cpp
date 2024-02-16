@@ -108,7 +108,6 @@ public:
     {
       
        // Initialize statement handle
-        std::cout<<sqlSelect<<endl;
         retcode_stmt = SQLAllocHandle(SQL_HANDLE_STMT, sqlconnectionhandle, &sqlstatementhandle);
         if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO)
         {
@@ -151,8 +150,6 @@ public:
 
                 // Convert SQLWCHAR to UTF-8
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-                            
-
                 SQLGetDiagRecW(SQL_HANDLE_STMT, sqlstatementhandle, 1, sqlstate, &nativeError, message, sizeof(message), &messageLength);
                 cout << "SQL Error: " << converter.to_bytes(sqlstate) << " - " << converter.to_bytes(message) << endl;
 
@@ -168,8 +165,24 @@ public:
 
 Database* Database::instance = nullptr;
 
+
+
 class User
 {
+
+/*
+CREATE TABLE [dbo].[Users](
+	[UserID] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](50) NULL,
+	[Email] [varchar](50) NULL,
+ CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
+(
+	[UserID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+
+*/
+
 public:
     int Id;
     std::string Name;
@@ -180,8 +193,14 @@ public:
 
     void Create_User()
     {
+
+        std::cout<<"Enter Name:";
+        std::cin>>Name;
+        std::cout<<"Enter Email:";
+        std::cin>>Email;
         std::string sqlStmtInsert = "Insert into Users(Name, Email) Values('" + Name + "','" + Email + "');";
         Database* DB = Database::getInstance();
+        std::cout<<sqlStmtInsert<<std::endl;
         std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
     }
     void Update_User()
@@ -197,6 +216,7 @@ public:
         std::cin>>sEmail;
         std::string sqlStmtUpdate = "Update Users SET Name='" + sName +"',Email='" + sEmail + "' where UserID=" + std::to_string(iId);
         Database* DB = Database::getInstance();
+        std::cout<<sqlStmtUpdate<<std::endl;
         std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
     }
      void Delete_User()
@@ -207,17 +227,109 @@ public:
         cin>>iId;
         std::string sqlStmtDelete = "Delete From Users where UserID=" + std::to_string(iId);
         Database* DB = Database::getInstance();
+        std::cout<<sqlStmtDelete<<std::endl;
         std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
     }
     void DisplayAll()
     {
         std::string sqlStmtSelete = "Select UserID, Name, Email from Users;";
         Database* DB = Database::getInstance();
+        std::cout<<sqlStmtSelete<<std::endl;
         DB->Database_DisplayAll(sqlStmtSelete);
             
     }        
 };
 
+class Customers
+{
+
+/* 
+CREATE TABLE [dbo].[customers](
+	[customer_id] [int] IDENTITY(1,1) NOT NULL,
+	[customer_name] [nvarchar](50) NULL,
+	[customer_email] [nvarchar](50) NULL,
+	[customer_phone] [nvarchar](50) NULL,
+	[customer_address] [nvarchar](250) NULL
+) ON [PRIMARY]
+GO
+*/
+
+public:
+    int customer_id;
+    std::string customer_name;
+    std::string customer_email;
+    std::string customer_phone;
+    std::string customer_address;
+
+    Customers(){};
+    ~Customers(){};
+
+    void Create_Customers()
+    {
+
+        std::string sName, sEmail,sPhone,sAddress;
+        std::cout<<"Enter Name:";
+        std::cin>>customer_name;
+        std::cout<<"Enter Email:";
+        std::cin>>customer_email;
+        std::cout<<"Enter sPhone:";
+        std::cin>>customer_phone;
+        std::cout<<"Enter sAddress:";
+        std::cin>>customer_address;
+        
+        std::string sqlStmtInsert = "Insert into Customers(customer_name, customer_email,customer_phone,customer_address) Values('" + customer_name + "','" + customer_email + "','"+ customer_phone+"','"+ customer_address +"');";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtInsert<<std::endl;
+        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+    }
+
+    
+    void Update_Customers()
+    {
+        int iId;
+        std::cout<<"Select the ID for Update"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sName, sEmail,sPhone,sAddress;
+        std::cout<<"Enter Name:";
+        std::cin>>sName;
+        std::cout<<"Enter Email:";
+        std::cin>>sEmail;
+        std::cout<<"Enter sPhone:";
+        std::cin>>sPhone;
+        std::cout<<"Enter sAddress:";
+        std::cin>>sAddress;
+        
+        std::string sqlStmtUpdate = "Update Customers SET customer_name='" + sName +"',customer_email='" + sEmail + "', customer_phone='" + sPhone + "', customer_address='" + sAddress +"' where customer_id=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtUpdate<<std::endl;
+        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+    }
+
+     void Delete_Customers()
+    {
+        int iId;
+        std::cout<<"Select the ID for Delete"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sqlStmtDelete = "Delete From Customers where customer_id=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtDelete<<std::endl;
+        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+    }
+    void DisplayAll()
+    {
+        std::string sqlStmtSelete = "Select * from Customers;";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtSelete<<std::endl;
+        DB->Database_DisplayAll(sqlStmtSelete);
+            
+    } 
+    
+
+};
+
+/*
 class Customer 
 {
 public:
@@ -254,107 +366,113 @@ public:
 
 
 std::vector<Customer*> Customer::vecCustomers;
+*/
 
 int main()
 {
-    std::cout << "Welcome to MiniProject" << std::endl;
-    std::cout << "Here are the Options" << std::endl;
-    std::cout << "1. Creating User" << std::endl;
-    std::cout << "2. Update User" << std::endl;
-    std::cout << "3. Delete Users" << std::endl;
-    std::cout << "4. Display Users" << std::endl;
-    std::cout << "5. Creating Bulk Customer" << std::endl;
-    
     int Option;
-    std::cout << "Enter your Option: ";
-    std::cin >> Option;
-
-    switch (Option)
+    do
     {
-    case 1: //Create Users
-        do
+        std::cout << "Welcome to MiniProject" << std::endl;
+        std::cout << "1. User Management" << std::endl;
+        std::cout << "2. Customer Management" << std::endl;
+        
+        std::cout << "Enter your Option: ";
+        std::cin >> Option;
+
+        switch (Option)
         {
-            User U;
-            std::cout << "Enter Name: ";
-            std::cin >> U.Name;
-            std::cout << "Enter Email: ";
-            std::cin >> U.Email;
-            U.Create_User();
-            std::cout << "Would you like to Add more Users? Press 1 for yes, 0 for no: ";
-            std::cin >> Option;
-        } while (Option);
-        break;
-    case 2: //Update Users
-            do
+            case 1: //User Management 
             {
-                User U;
-                U.Update_User();
-                std::cout << "Would you like to Udpate more Users? Press 1 for yes, 0 for no: ";
-                std::cin >> Option;
-            } while (Option);
-            break;
-    case 3: //Delete Users
-            do
+                    std::cout << "Following are the Options for User Management" << std::endl;
+                    std::cout << "1. Create " << std::endl;
+                    std::cout << "2. Update " << std::endl;
+                    std::cout << "3. Delete " << std::endl;
+                    std::cout << "4. View " << std::endl;
+                    std::cout << "Enter your Option: ";
+                    std::cin >> Option;
+                    User objUser;
+                    switch(Option)
+                    {
+                        case 1: //Add New Record
+                            do{
+                                objUser.Create_User();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 2: //Update Record
+                            do{
+                                objUser.Update_User();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 3://Delete Record
+                            do{
+                                objUser.Delete_User();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 4://View Record
+                            do{
+                                objUser.DisplayAll();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+
+                    } //Close of Operations for Users 
+            } //Cloase Case for user Management 
+            break; // Break for User Management  
+            case 2: //User Management 
             {
-                User U;
-                U.Delete_User();
-                std::cout << "Would you like to Delete more Users? Press 1 for yes, 0 for no: ";
-                std::cin >> Option;
-            } while (Option);
-            break;
-    
-    case 4: //Display Users
-           { 
-            User U;
-            U.DisplayAll();
-           }
-            break;
-    case 5: //Creating Bulk Customers 
-        do
-        {
-            Customer* objCustomer=new Customer();
+                    std::cout << "Following are the Options for Customer Management" << std::endl;
+                    std::cout << "1. Create " << std::endl;
+                    std::cout << "2. Update " << std::endl;
+                    std::cout << "3. Delete " << std::endl;
+                    std::cout << "4. View " << std::endl;
+                    std::cout << "Enter your Option: ";
+                    std::cin >> Option;
+                    Customers objCust;
+                    switch(Option)
+                    {
+                        case 1: //Add New Record
+                            do{
+                                objCust.Create_Customers();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no:"<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 2: //Update Record
+                            do{
+                                objCust.Update_Customers();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 3://Delete Record
+                            do{
+                                objCust.Delete_Customers();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 4://View Record
+                            do{
+                                objCust.DisplayAll();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
 
-            std::cout<<"Enter CustomerID:"<<std::endl;
-            std::cin>>objCustomer->CustomerID;
-
-            std::cout<<"Enter CompanyName "<<std::endl;
-            std::cin>>objCustomer->CompanyName;
-
-            std::cout<<"Enter ContactName:"<<std::endl;
-            std::cin>>objCustomer->ContactName;
-            
-            std::cout<<"Enter ContactTitle:"<<std::endl;
-            std::cin>>objCustomer->ContactTitle;
-
-            std::cout<<"Enter Address:"<<std::endl;
-            std::cin>>objCustomer->Address;
-            
-            std::cout<<"Enter City:"<<std::endl;
-            std::cin>>objCustomer->City;
-
-            std::cout<<"Enter Region:"<<std::endl;
-            std::cin>>objCustomer->Region;
-            
-            std::cout<<"Enter PostalCode:"<<std::endl;
-            std::cin>>objCustomer->PostalCode;
-
-            std::cout<<"Enter Country:"<<std::endl;
-            std::cin>>objCustomer->Country;
-
-            std::cout<<"Enter Phone:"<<std::endl;
-            std::cin>>objCustomer->Phone;
-            
-            std::cout<<"Enter Fax:"<<std::endl;
-            std::cin>>objCustomer->Fax;
-
-            Customer::vecCustomers.push_back(objCustomer);             
-            std::cout << "Would you like to Add more Customers? Press 1 for yes, 0 for no: ";
+                    } //Close of Operations for Customer 
+            } //Cloase Case for Customer Management 
+            break; // Break for Customer Management 
+        }
+            std::cout << "Would you like to perform Other Management? Press 1 for yes, 0 for no: "<<std::endl;
             std::cin >> Option;
-        } while (Option);
-        Customer::createCustomers();       
-        break;
-
-    }
-
+        } while (Option); 
     return 0;
 }
