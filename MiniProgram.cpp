@@ -11,10 +11,40 @@
 #include <string>
 #include <cstdlib> // for atoi function
 #include <regex>  // For Regular Expression Validation (Utility Class)
+#include <ctime>
+using namespace std;
+
+
 
 class CUtility
 {
     public :
+        
+    //Function return Person Loging to the system and executing the application     
+    static std::string getCurrentUsername() {
+    // Define a string to hold the username
+    std::string username;
+
+    // Platform-specific code to retrieve the username
+    #if defined(_WIN32) || defined(_WIN64)
+    // Windows
+    char buffer[256];
+    DWORD bufferSize = 256;
+    if (GetUserNameA(buffer, &bufferSize)) {
+        username = buffer;
+    }
+    #elif defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__)
+    // Unix-like systems (Linux, macOS)
+    char* loginName = getlogin();
+    if (loginName != nullptr) {
+        username = loginName;
+    }
+    #endif
+
+    return username;
+    }
+        
+        
         // Function to validate a name
         static bool isValidName(const std::string& name) {
             // Name should only contain alphabets and spaces
@@ -32,11 +62,43 @@ class CUtility
             return std::regex_match(phone, std::regex("^\\d{10}$"));
         }
 
-
-
 };
 
-using namespace std;
+class Logger {
+private:
+    std::ofstream logfile;
+    std::string UserName;
+public:
+    Logger(const std::string& filename) {
+        logfile.open(filename, std::ios_base::app); // Open file in append mode
+        if (!logfile.is_open()) {
+            std::cerr << "Error: Failed to open log file." << std::endl;
+        }
+        UserName = CUtility::getCurrentUsername();
+        std::cout << "Current logged-in user: " << UserName << std::endl;
+
+    }
+
+    ~Logger() {
+        if (logfile.is_open()) {
+            logfile.close();
+        }
+    }
+
+    void log(const std::string& message) {
+        if (logfile.is_open()) {
+            time_t now = time(0);
+            tm* localTime = localtime(&now);
+            char timestamp[100];
+            strftime(timestamp, sizeof(timestamp), "[%Y-%m-%d %H:%M:%S]", localTime);
+            logfile <<UserName<<" "<< timestamp << " " << message << std::endl;
+        } else {
+            std::cerr << "Error: Log file is not open." << std::endl;
+        }
+    }
+};
+
+
 
 class Database
 {
@@ -200,6 +262,8 @@ Database* Database::instance = nullptr;
 class User
 {
 
+private: 
+     Logger objlogger;
 /*
 CREATE TABLE [dbo].[Users](
 	[UserID] [int] IDENTITY(1,1) NOT NULL,
@@ -218,8 +282,14 @@ public:
     std::string Name;
     std::string Email;
 
-    User(){};
+    //User(){};
     ~User(){};
+
+    User(const std::string& logFilename) : objlogger(logFilename) {}
+
+    void logOperation(const std::string& operation) {
+        objlogger.log("User operation: " + operation);
+    }
 
     void Create_User()
     {
@@ -240,6 +310,7 @@ public:
         std::cout<<sqlStmtInsert<<std::endl;
         try {
             std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+            logOperation("Create_User");
         }
         catch (const std::exception& e) {
             std::cerr << "Create_User: Error: " << e.what() << std::endl;
@@ -264,6 +335,7 @@ public:
         std::cout<<sqlStmtUpdate<<std::endl;
         try {
             std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+            logOperation("Update_User");
         }
         catch (const std::exception& e) {
             std::cerr << "Update_User: Error: " << e.what() << std::endl;
@@ -280,6 +352,7 @@ public:
         std::cout<<sqlStmtDelete<<std::endl;
         try {
             std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+            logOperation("Delete_User");
         }
         catch (const std::exception& e) {
             std::cerr << "Delete_User: Error: " << e.what() << std::endl;
@@ -293,6 +366,7 @@ public:
         std::cout<<sqlStmtSelete<<std::endl;
         try {
             DB->Database_DisplayAll(sqlStmtSelete);
+            logOperation("DisplayAll");
         }
         catch (const std::exception& e) {
             std::cerr << "Users DisplayAll: Error: " << e.what() << std::endl;
@@ -482,7 +556,7 @@ int main()
                     std::cout << "4. View " << std::endl;
                     std::cout << "Enter your Option: ";
                     std::cin >> Option;
-                    User objUser;
+                    User objUser("UserLogger.txt");
                     switch(Option)
                     {
                         case 1: //Add New Record
