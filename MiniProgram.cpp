@@ -70,6 +70,7 @@ private:
         {
             // Handle connection error
             cout << "Failed to connect to the database." << endl;
+            throw std::runtime_error("Failed to connect to the database.");
         }
     }
 
@@ -121,6 +122,9 @@ public:
 
                 SQLGetDiagRecW(SQL_HANDLE_STMT, sqlstatementhandle, 1, sqlstate, &nativeError, message, sizeof(message), &messageLength);
                 cout << "SQL Error: " << sqlstate << " - " << message << endl;
+
+                 std::string errorMessage = converter.to_bytes(message);
+                 throw std::runtime_error("SQL Error: " + errorMessage);
             }
         }
         else
@@ -177,7 +181,9 @@ public:
                 std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
                 SQLGetDiagRecW(SQL_HANDLE_STMT, sqlstatementhandle, 1, sqlstate, &nativeError, message, sizeof(message), &messageLength);
                 cout << "SQL Error: " << converter.to_bytes(sqlstate) << " - " << converter.to_bytes(message) << endl;
-
+                std::string errorMessage = converter.to_bytes(message);
+                throw std::runtime_error("SQL Error: " + errorMessage);
+            
             }
             wcout << "</table>";
         }
@@ -232,7 +238,15 @@ public:
         std::string sqlStmtInsert = "Insert into Users(Name, Email) Values('" + Name + "','" + Email + "');";
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtInsert<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Create_User: Error: " << e.what() << std::endl;
+        }
+
+
+
     }
     void Update_User()
     {
@@ -248,7 +262,12 @@ public:
         std::string sqlStmtUpdate = "Update Users SET Name='" + sName +"',Email='" + sEmail + "' where UserID=" + std::to_string(iId);
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtUpdate<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Update_User: Error: " << e.what() << std::endl;
+        }
     }
      void Delete_User()
     {
@@ -259,15 +278,27 @@ public:
         std::string sqlStmtDelete = "Delete From Users where UserID=" + std::to_string(iId);
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtDelete<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Delete_User: Error: " << e.what() << std::endl;
+        }
+        
     }
     void DisplayAll()
     {
         std::string sqlStmtSelete = "Select UserID, Name, Email from Users;";
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtSelete<<std::endl;
-        DB->Database_DisplayAll(sqlStmtSelete);
-            
+        try {
+            DB->Database_DisplayAll(sqlStmtSelete);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Users DisplayAll: Error: " << e.what() << std::endl;
+        }
+
+
     }        
 };
 
@@ -314,7 +345,13 @@ public:
         std::string sqlStmtInsert = "Insert into Customers(customer_name, customer_email,customer_phone,customer_address) Values('" + customer_name + "','" + customer_email + "','"+ customer_phone+"','"+ customer_address +"');";
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtInsert<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Create_Customers: Error: " << e.what() << std::endl;
+        }
+        
     }
 
     
@@ -337,7 +374,13 @@ public:
         std::string sqlStmtUpdate = "Update Customers SET customer_name='" + sName +"',customer_email='" + sEmail + "', customer_phone='" + sPhone + "', customer_address='" + sAddress +"' where customer_id=" + std::to_string(iId);
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtUpdate<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+        try {
+           std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Update_Customers: Error: " << e.what() << std::endl;
+        }
+        
     }
 
      void Delete_Customers()
@@ -349,15 +392,29 @@ public:
         std::string sqlStmtDelete = "Delete From Customers where customer_id=" + std::to_string(iId);
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtDelete<<std::endl;
-        std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+        
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Delete_Customers: Error: " << e.what() << std::endl;
+        }
+        
     }
     void DisplayAll()
     {
         std::string sqlStmtSelete = "Select * from Customers;";
         Database* DB = Database::getInstance();
         std::cout<<sqlStmtSelete<<std::endl;
-        DB->Database_DisplayAll(sqlStmtSelete);
-            
+        try {
+            DB->Database_DisplayAll(sqlStmtSelete);
+
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Customers DisplayAll: Error: " << e.what() << std::endl;
+        }
+                    
     } 
     
 
