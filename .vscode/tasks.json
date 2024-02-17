@@ -10,7 +10,14 @@
                 "${file}",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-lodbc32"  // Add this line for linking against ODBC library
+                "-lodbc32" , // Add this line for linking against ODBC library
+                "-lstdc++",
+                "-LC:\\msys64\\ucrt64\\bin",
+                "-lsqlite3",
+                "-LC:\\Users\\sonal\\vcpkg\\packages\\curl_x64-windows\\lib",
+                "-lcurl",
+                "-IC:\\Users\\sonal\\vcpkg\\packages\\curl_x64-windows\\include"
+                
             ],
             "options": {
                 "cwd": "${fileDirname}"
