@@ -15,7 +15,6 @@
 using namespace std;
 
 
-
 class CUtility
 {
     public :
@@ -61,7 +60,16 @@ class CUtility
             // Regular expression for phone number validation
             return std::regex_match(phone, std::regex("^\\d{10}$"));
         }
-
+        static bool isNumber(const std::string& str) {
+         /*
+            for (char c : str) {
+            if (!std::isdigit(c)) {
+                return false;
+                }
+            }
+        return true; */
+         return std::regex_match(str, std::regex("^\\[0-9]+$"));
+        }
 };
 
 class Logger {
@@ -69,6 +77,10 @@ private:
     std::ofstream logfile;
     std::string UserName;
 public:
+    
+     // Disable Logger's copy assignment operator
+    Logger& operator=(const Logger& other) = delete;
+
     Logger(const std::string& filename) {
         logfile.open(filename, std::ios_base::app); // Open file in append mode
         if (!logfile.is_open()) {
@@ -76,7 +88,6 @@ public:
         }
         UserName = CUtility::getCurrentUsername();
         std::cout << "Current logged-in user: " << UserName << std::endl;
-
     }
 
     ~Logger() {
@@ -254,6 +265,48 @@ public:
             cout << "Database_DisplayAll: Error in Initializing statement handle" << endl;
         }
     }
+
+    int getIdenity()
+    { 
+        int lastInsertedId = -1; // Initialize to -1 to indicate no ID was retrieved        
+        // Retrieve the last inserted ID
+        retcode_stmt = SQLExecDirectW(sqlstatementhandle, (SQLWCHAR*)L"SELECT @@IDENTITY", SQL_NTS);
+        if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO)
+        {
+            // Bind the result to a variable
+            SQLINTEGER lastId;
+            SQLLEN indicator;
+            SQLBindCol(sqlstatementhandle, 1, SQL_C_SLONG, &lastId, sizeof(lastId), &indicator);
+
+            // Fetch the result
+            if (SQLFetch(sqlstatementhandle) == SQL_SUCCESS)
+            {
+                if (indicator != SQL_NULL_DATA)
+                {
+                    // Successfully retrieved the last inserted ID
+                    lastInsertedId = lastId;
+                    std::cout << "Last inserted ID: " << lastInsertedId << std::endl;
+                }
+                else
+                {
+                    // The last inserted ID is NULL
+                    std::cout << "Last inserted ID is NULL" << std::endl;
+                }
+            }
+            else
+            {
+                // Failed to fetch the result
+                std::cerr << "Failed to fetch the last inserted ID" << std::endl;
+            }
+        }
+        else
+        {
+            // Failed to execute the select statement for retrieving last ID
+            std::cerr << "Failed to execute SELECT @@IDENTITY statement" << std::endl;
+        }
+        return lastInsertedId;
+    }
+
 };
 
 
@@ -494,44 +547,410 @@ public:
 
 };
 
-/*
-class Customer 
+class Video
 {
-public:
-    std::string CustomerID;
-    std::string CompanyName;
-    std::string ContactName;
-    std::string ContactTitle;
-    std::string Address;
-    std::string City;
-    std::string Region;
-    std::string PostalCode;
-    std::string Country;
-    std::string Phone;
-    std::string Fax;
-    static std::vector<Customer*> vecCustomers;
 
-    void static createCustomers()
+private: 
+     Logger objlogger;
+/*
+CREATE TABLE [dbo].[Video](
+	[VideoID] [int] IDENTITY(1,1) NOT NULL,
+	[VideoName] [nvarchar](50) NULL,
+	[ActorName] [nvarchar](50) NULL,
+	[ReleaseYear] [int] NULL,
+ CONSTRAINT [PK_Vedios] PRIMARY KEY CLUSTERED 
+(
+	[VideoID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+
+*/
+
+public:
+    int VideoID;
+    std::string VideoName;
+    std::string ActorName;
+    int ReleaseYear;
+    
+
+    ~Video(){};
+
+    Video(const std::string& logFilename) : objlogger(logFilename) {}
+
+    void logOperation(const std::string& operation) {
+        objlogger.log("Video operation: " + operation);
+    }
+
+    void Create_Video()
     {
-        for (const auto objCustomer : vecCustomers) {
-           Create_Customer(objCustomer);
+        do{
+                std::cout<<"Enter Video Name:";
+                std::cin>>VideoName;
+        }while(!CUtility::isValidName(VideoName));
+        
+        do{
+                std::cout<<"Enter Actor Name:";
+                std::cin>>ActorName;
+        
+        }while(!CUtility::isValidName(ActorName));
+
+        do{
+                std::cout<<"Enter Release Year:";
+                std::cin>>ReleaseYear;
+        
+        }while(CUtility::isNumber(std::to_string(ReleaseYear)));
+
+        /*
+        std::string VideoName;
+        std::string ActorName;
+        int ReleaseYear;
+        */
+
+        std::string sqlStmtInsert = "Insert into Video(VideoName,ActorName,ReleaseYear) Values('" + VideoName + "','" + ActorName + "'," + std::to_string(ReleaseYear) + ");";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtInsert<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+            logOperation("Create_Video");
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Create_Video: Error: " << e.what() << std::endl;
+        }
+
+
+
+    }
+    void Update_Video()
+    {
+        int iId;
+        std::cout<<"Select the ID for Update"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sVideoName, sActorName;
+        int iReleaseYear;
+        std::cout<<"Enter Video Name:";
+        std::cin>>sVideoName;
+        std::cout<<"Enter Actor Name:";
+        std::cin>>sActorName;
+        std::cout<<"Enter Release Year:";
+        std::cin>>iReleaseYear;
+        
+        std::string sqlStmtUpdate = "Update Video SET VideoName='" + sVideoName +"',ActorName='" + sActorName + "',ReleaseYear=" + std::to_string(iReleaseYear) +" where VideoID=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtUpdate<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+            logOperation("Update_Video");
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Update_Video: Error: " << e.what() << std::endl;
         }
     }
-
-    int static Create_Customer(const Customer* Obj)
+     void Delete_Video()
     {
-            std::string sqlStmtInsert = "INSERT INTO [dbo].[Customers] ([CustomerId],[CompanyName],[ContactName],[ContactTitle],[Address],[City],[Region],[PostalCode],[Country],[Phone],[Fax]) VALUES ('" + Obj->CustomerID + "','" + Obj->CompanyName + "','" + Obj->ContactName + "','" + Obj->ContactTitle + "','" + Obj->Address + "','" + Obj->City + "','" + Obj->Region + "','" + Obj->PostalCode + "','" + Obj->Country + "','" + Obj->Phone + "','" + Obj->Fax + "')";
-            Database* DB = Database::getInstance();
-     
-            return DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+        int iId;
+        std::cout<<"Select the ID for Delete"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sqlStmtDelete = "Delete From Video where VideoID=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtDelete<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+            logOperation("Delete_Video");
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Delete_Video: Error: " << e.what() << std::endl;
+        }
+        
     }
+    void DisplayAll()
+    {
+        std::string sqlStmtSelete = "Select * from Video;";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtSelete<<std::endl;
+        try {
+            DB->Database_DisplayAll(sqlStmtSelete);
+            logOperation("DisplayAll");
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Video DisplayAll: Error: " << e.what() << std::endl;
+        }
 
 
+    }        
 };
 
 
-std::vector<Customer*> Customer::vecCustomers;
+class TransactionMaster {
+
+/*
+CREATE TABLE [dbo].[TransactionMaster](
+	[TrID] [int] IDENTITY(1,1) NOT NULL,
+	[TrDate] [date] NULL,
+	[CustomerID] [int] NULL,
+	[EmployeeID] [int] NULL,
+ CONSTRAINT [PK_TransactionMaster] PRIMARY KEY CLUSTERED 
+(
+	[TrID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
 */
+
+public:
+    int TrID;
+    std::string TrDate;
+    int CustomerID;
+    int EmployeeID;
+
+    TransactionMaster()=default;
+    ~TransactionMaster() = default;
+
+    void Create_TransactionMaster()
+    {
+        std::cout<<"Enter TrDate in YYYY-mm-DD Format:";
+        std::cin>>TrDate;
+        do{
+                std::cout<<"Enter Customer ID:";
+                std::cin>>CustomerID;
+        }while(CUtility::isNumber(std::to_string(CustomerID)));
+        
+        do{
+            
+                std::cout<<"Enter Employee ID:";
+                std::cin>>EmployeeID;
+        
+        }while(CUtility::isNumber(std::to_string(EmployeeID)));
+
+        /*
+        [TrID] [int] IDENTITY(1,1) NOT NULL,
+	    [TrDate] [date] NULL,
+	    [CustomerID] [int] NULL,
+	    [EmployeeID] [int] NULL,
+        */
+
+        std::string sqlStmtInsert = "Insert into TransactionMaster(TrDate,CustomerID,EmployeeID) Values('" + TrDate + "'," + std::to_string(CustomerID) + "," + std::to_string(EmployeeID) + ");";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtInsert<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+            TrID = DB->getIdenity();
+            cout<<std::endl<<"TransactionMaster ID:" <<TrID;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Create_Video: Error: " << e.what() << std::endl;
+        }
+
+    }
+
+    void Update_TransactionMaster()
+    {
+        int iId;
+        std::cout<<"Select the ID for Update"<<endl;
+        DisplayAll();
+        cin>>iId;
+        int iEmployeeID, iCustomerID;
+        std::string sTrDate;
+        std::cout<<"Enter Employee ID:";
+        std::cin>>iEmployeeID;
+        std::cout<<"Enter Customer ID :";
+        std::cin>>iCustomerID;
+        std::cout<<"Enter Tr Date:";
+        std::cin>>sTrDate;
+        
+         /*
+        [TrID] [int] IDENTITY(1,1) NOT NULL,
+	    [TrDate] [date] NULL,
+	    [CustomerID] [int] NULL,
+	    [EmployeeID] [int] NULL,
+        */
+        std::string sqlStmtUpdate = "Update TransactionMaster SET TrDate='" + sTrDate +"',CustomerID=" + std::to_string(iCustomerID) + ",EmployeeID=" + std::to_string(iEmployeeID) +" where VideoID=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtUpdate<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtUpdate);
+           
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Update_TransactionMaster: Error: " << e.what() << std::endl;
+        }
+    }
+     void Delete_TransactionMaster()
+    {
+        int iId;
+        std::cout<<"Select the ID for Delete"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sqlStmtDelete = "Delete From TransactionMaster where TrID=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtDelete<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+           
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Delete_TransactionMaster: Error: " << e.what() << std::endl;
+        }
+        
+    }
+    void DisplayAll()
+    {
+        std::string sqlStmtSelete = "Select * from TransactionMaster;";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtSelete<<std::endl;
+        try {
+            DB->Database_DisplayAll(sqlStmtSelete);
+            
+        }
+        catch (const std::exception& e) {
+            std::cerr << "TransactionMaster DisplayAll: Error: " << e.what() << std::endl;
+        }
+    }
+
+ };
+
+
+class TransactionDetails {
+    
+/*
+CREATE TABLE [dbo].[TransactionDetails](
+	[TrID] [int] NOT NULL,
+	[VideoID] [int] NOT NULL,
+	[VideoName] [nvarchar](50) NULL,
+	[Rent] [float] NULL,
+ CONSTRAINT [PK_TransactionDetails] PRIMARY KEY CLUSTERED 
+(
+	[TrID] ASC,
+	[VideoID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+
+
+*/
+
+public:
+    int TrID;
+    int VideoID;
+    std::string VideoName;
+    double Rent;
+
+    TransactionDetails()=default;
+    ~TransactionDetails()=default;  
+
+    void Create_TransactionDetails()
+    {
+        
+        do{
+                std::cout<<"Enter Video ID:";
+                std::cin>>VideoID;
+        }while(CUtility::isNumber(std::to_string(VideoID)));
+        
+        do{
+                std::cout<<"Enter Video Name:";
+                std::cin>>VideoName;
+
+        
+        }while(!CUtility::isValidName(VideoName));
+
+        do{
+                std::cout<<"Enter Rent:";
+                std::cin>>Rent;
+        }while(CUtility::isNumber(std::to_string(Rent)));
+
+        /*
+        [TrID] [int] NOT NULL,
+	    [VideoID] [int] NOT NULL,
+	    [VideoName] [nvarchar](50) NULL,
+	    [Rent] [float] NULL,
+    */
+
+        std::string sqlStmtInsert = "Insert into TransactionDetails (TrID,VideoID,VideoName,Rent) Values('" + std::to_string(TrID) + "'," + std::to_string(VideoID) + ",'" + VideoName + "'," + std::to_string(Rent) + ");";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtInsert<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtInsert);
+            
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Create_TransacitonDetails: Error: " << e.what() << std::endl;
+        }
+
+    }
+    void Delete_TransactionDetails()
+    {
+        int iId;
+        std::cout<<"Select the ID for Delete"<<endl;
+        DisplayAll();
+        cin>>iId;
+        std::string sqlStmtDelete = "Delete From TransactionDetails where TrID=" + std::to_string(iId);
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtDelete<<std::endl;
+        try {
+            std::cout << DB->Datbase_Create_Update_Delete(sqlStmtDelete);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Delete_TransactionDetails: Error: " << e.what() << std::endl;
+        }
+        
+    }
+    void DisplayAll()
+    {
+        std::string sqlStmtSelete = "Select * from TransactionDetails;";
+        Database* DB = Database::getInstance();
+        std::cout<<sqlStmtSelete<<std::endl;
+        try {
+            DB->Database_DisplayAll(sqlStmtSelete);
+      
+        }
+        catch (const std::exception& e) {
+            std::cerr << "TransactionDetails DisplayAll: Error: " << e.what() << std::endl;
+        }
+
+
+    }
+
+};
+
+class Invoice {
+private:
+    std::vector<TransactionMaster> vtransactionMasters;
+    std::vector<TransactionDetails> vtransactionDetails;
+public:
+    void addTransaction(const TransactionMaster& transactionMaster, const std::vector<TransactionDetails>& details) {
+        vtransactionMasters.push_back(transactionMaster);
+        for (const auto& detail : details) {
+            vtransactionDetails.push_back(detail);
+        }
+    }
+
+    void generateInvoice(const std::string& fileName) {
+        std::ofstream outputFile(fileName);
+        if (outputFile.is_open()) {
+            for (const auto& transactionMaster : vtransactionMasters) {
+                outputFile << "Transaction ID: " << transactionMaster.TrID << std::endl;
+                outputFile << "Transaction Date: " << transactionMaster.TrDate << std::endl;
+                outputFile << "Customer ID: " << transactionMaster.CustomerID << std::endl;
+                outputFile << "Employee ID: " << transactionMaster.EmployeeID << std::endl;
+
+                double totalRent = 0.0;
+                for (const auto& detail : vtransactionDetails) {
+                    if (detail.TrID == transactionMaster.TrID) {
+                        outputFile << "Video ID: " << detail.VideoID << ", Video Name: " << detail.VideoName << ", Rent: $" << detail.Rent << std::endl;
+                        totalRent += detail.Rent;
+                    }
+                }
+                outputFile << "Total Rent: $" << totalRent << std::endl;
+                outputFile << "--------------------------------------------" << std::endl;
+            }
+            outputFile.close();
+            std::cout << "Invoice generated successfully and saved as: " << fileName << std::endl;
+        } else {
+            std::cerr << "Unable to open file: " << fileName << std::endl;
+        }
+    }
+};
+
 
 int main()
 {
@@ -541,12 +960,32 @@ int main()
         std::cout << "Welcome to MiniProject" << std::endl;
         std::cout << "1. User Management" << std::endl;
         std::cout << "2. Customer Management" << std::endl;
+        std::cout << "3. Video Management "<<std::endl;
+        std::cout <<" 4. Invoice/Transaciton"<<std::endl;
         
         std::cout << "Enter your Option: ";
         std::cin >> Option;
 
         switch (Option)
         {
+            case 4: //Invoice/Transaction 
+            {
+                    TransactionMaster master;
+                    master.Create_TransactionMaster();
+
+                    
+                    TransactionDetails objdetails;
+                    objdetails.TrID = master.TrID;
+                    objdetails.Create_TransactionDetails();
+
+                    std::vector<TransactionDetails> vdetails;
+                    vdetails.push_back(objdetails);
+                    
+                    Invoice invoice;
+                    invoice.addTransaction(master, vdetails);
+                    invoice.generateInvoice("invoice.txt");
+            }    
+            break;    
             case 1: //User Management 
             {
                     std::cout << "Following are the Options for User Management" << std::endl;
@@ -556,7 +995,7 @@ int main()
                     std::cout << "4. View " << std::endl;
                     std::cout << "Enter your Option: ";
                     std::cin >> Option;
-                    User objUser("UserLogger.txt");
+                    User objUser("UserLogger.log");
                     switch(Option)
                     {
                         case 1: //Add New Record
@@ -591,7 +1030,7 @@ int main()
                     } //Close of Operations for Users 
             } //Cloase Case for user Management 
             break; // Break for User Management  
-            case 2: //User Management 
+            case 2: //Customer Management 
             {
                     std::cout << "Following are the Options for Customer Management" << std::endl;
                     std::cout << "1. Create " << std::endl;
@@ -633,11 +1072,57 @@ int main()
                             break;
 
                     } //Close of Operations for Customer 
-            } //Cloase Case for Customer Management 
-            break; // Break for Customer Management 
+            }
+            break; //close of Customer Management  
+            case 3: //Video Managemt 
+            {
+                    std::cout << "Following are the Options for Video Management" << std::endl;
+                    std::cout << "1. Create " << std::endl;
+                    std::cout << "2. Update " << std::endl;
+                    std::cout << "3. Delete " << std::endl;
+                    std::cout << "4. View " << std::endl;
+                    std::cout << "Enter your Option: ";
+                    std::cin >> Option;
+                    Video objVideo("VideoLogger.log");
+                    switch(Option)
+                    {
+                        case 1: //Add New Record
+                            do{
+                                objVideo.Create_Video();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 2: //Update Record
+                            do{
+                                objVideo.Update_Video();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 3://Delete Record
+                            do{
+                               objVideo.Delete_Video();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+                        case 4://View Record
+                            do{
+                                objVideo.DisplayAll();
+                                std::cout << "Would you like to continue? Press 1 for yes, 0 for no: "<<std::endl;
+                                std::cin >> Option;
+                            } while (Option);             
+                            break;
+
+                    } //Close of Operations for Video 
+            }
+            break; // Break for Video Management
+
         }
             std::cout << "Would you like to perform Other Management? Press 1 for yes, 0 for no: "<<std::endl;
             std::cin >> Option;
         } while (Option); 
+
     return 0;
 }
