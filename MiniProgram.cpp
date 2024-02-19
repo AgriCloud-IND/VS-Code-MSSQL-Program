@@ -73,6 +73,12 @@ class CUtility
         return true; */
          return std::regex_match(str, std::regex("^\\[0-9]+$"));
         }
+
+        static void OpenFileinBrowser(std::string sFileName)
+        {
+                std::string command = "start " + sFileName;
+                std::system(command.c_str());
+        }
 };
 
 class Logger {
@@ -324,7 +330,7 @@ public:
                 if(sRepoprtFileName !=""){
                 
                     generateReportFile(sRepoprtFileName,columnNames,rowsData);
-                
+                    CUtility::OpenFileinBrowser(sRepoprtFileName+".csv");
                 }
                 else{
                     
@@ -1072,6 +1078,7 @@ public:
                 outputFile << "--------------------------------------------" << std::endl;
             }
             outputFile.close();
+            CUtility::OpenFileinBrowser(fileName);
             std::cout << "Invoice generated successfully and saved as: " << fileName << std::endl;
         } else {
             std::cerr << "Unable to open file: " << fileName << std::endl;
