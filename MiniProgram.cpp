@@ -12,6 +12,9 @@
 #include <cstdlib> // for atoi function
 #include <regex>  // For Regular Expression Validation (Utility Class)
 #include <ctime>
+#include <map>
+
+
 using namespace std;
 
 
@@ -206,7 +209,8 @@ public:
         }
         return retcode_stmt;
     }
-    void Database_DisplayAll(const string& sqlSelect)
+
+    void Database_DisplayAll(const string& sqlSelect, std::string sRepoprtFileName="")
     {
       
        // Initialize statement handle
@@ -226,14 +230,16 @@ public:
             retcode_stmt = SQLExecDirectW(sqlstatementhandle, const_cast<SQLWCHAR*>(selectStatement), SQL_NTS);
 
 
-            wcout << "<table border='1'>\n";
-            
-            if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO) {
+             
+            if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO) 
+            {
+                 std::cout<<"Part 2:"<<std::endl;    
+               /*
                 SQLWCHAR SelectUserID[50];
                 SQLWCHAR Selectname[50];
                 SQLWCHAR Selectemail[50];
-
-                wcout << "<tr><th>UserID</th><th>Name</th><th>Email</th></tr>\n";
+                //wcout << "<table border='1'>\n";
+                  wcout << "<tr><th>UserID</th><th>Name</th><th>Email</th></tr>\n";
 
                 while (SQLFetch(sqlstatementhandle) == SQL_SUCCESS) {
                     SQLGetData(sqlstatementhandle, 1, SQL_C_WCHAR, SelectUserID, sizeof(SelectUserID), NULL);
@@ -259,13 +265,134 @@ public:
             
             }
             wcout << "</table>";
+            */
+                SQLSMALLINT numCols;
+                SQLNumResultCols(sqlstatementhandle, &numCols);
+
+                // Vector to hold the data for each row dynamically
+                std::vector<std::vector<std::wstring>> rowsData;
+                std::vector<std::string> columnNames;
+                columnNames.clear();
+                columnNames.reserve(numCols);
+
+                for (SQLSMALLINT i = 1; i <= numCols; ++i) {
+                    SQLCHAR columnName[256];
+                    SQLSMALLINT columnNameLength;
+                    SQLSMALLINT dataType;
+                    SQLULEN columnSize;
+                    SQLSMALLINT decimalDigits;
+                    SQLSMALLINT nullable;
+
+                    SQLDescribeCol(sqlstatementhandle, i, columnName, sizeof(columnName), &columnNameLength, &dataType, &columnSize, &decimalDigits, &nullable);
+                    columnNames.emplace_back(reinterpret_cast<char*>(columnName));
+                }   
+
+
+                // Fetch rows
+                while (SQLFetch(sqlstatementhandle) == SQL_SUCCESS) 
+                {
+                    // Vector to hold the data for the current row
+                    std::vector<std::wstring> rowData;
+
+                    // Retrieve data for each column in the row
+                    for (SQLSMALLINT col = 1; col <= numCols; ++col) {
+                        SQLWCHAR data[256]; // Adjust size as needed
+                        SQLLEN lenOrInd = 0;
+                        retcode_stmt = SQLGetData(sqlstatementhandle, col, SQL_C_WCHAR, data, sizeof(data), &lenOrInd);
+
+                        // Check for NULL values or errors
+                        if (retcode_stmt == SQL_NULL_DATA) {
+                            rowData.push_back(L"NULL");
+                        } else if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO) {
+                            rowData.push_back(data);
+                        } else {
+                            // Handle error
+                            SQLWCHAR sqlstate[6];
+                            SQLWCHAR message[SQL_MAX_MESSAGE_LENGTH];
+                            SQLINTEGER nativeError;
+                            SQLSMALLINT messageLength;
+                            SQLGetDiagRecW(SQL_HANDLE_STMT, sqlstatementhandle, 1, sqlstate, &nativeError, message, sizeof(message), &messageLength);
+                            std::wstring errorMessage = std::wstring(message, messageLength);
+                            throw std::runtime_error("SQL Error: " + converter.to_bytes(errorMessage));
+                        }
+                    }
+
+                    // Add the current row's data to the rowsData vector
+                    rowsData.push_back(rowData);
+                }
+
+                if(sRepoprtFileName !=""){
+                
+                    generateReportFile(sRepoprtFileName,columnNames,rowsData);
+                
+                }
+                else{
+                    
+                    // Print retrievedcolumn and  data
+                    for(const auto& col: columnNames)
+                    {
+                        std::cout<<col<<"\t";
+                    }
+                    std::cout<< std::endl;
+                    
+                    for (const auto& row : rowsData) {
+                        for (const auto& cell : row) {
+                            std::wcout << cell << L"\t";
+                        }
+                        std::wcout << std::endl;
+                    }
+                
+                }
+            } 
+            else 
+            {
+                // Handle SQL error
+                SQLWCHAR sqlstate[6];
+                SQLWCHAR message[SQL_MAX_MESSAGE_LENGTH];
+                SQLINTEGER nativeError;
+                SQLSMALLINT messageLength;
+                SQLGetDiagRecW(SQL_HANDLE_STMT, sqlstatementhandle, 1, sqlstate, &nativeError, message, sizeof(message), &messageLength);
+                std::wstring errorMessage = std::wstring(message, messageLength);
+                throw std::runtime_error("SQL Error: " + converter.to_bytes(errorMessage));
+            }
         }
         else
         {
             cout << "Database_DisplayAll: Error in Initializing statement handle" << endl;
         }
+        
+        // Free statement handle
+        SQLFreeHandle(SQL_HANDLE_STMT, sqlstatementhandle);
+
+    }
+    void generateReportFile( std::string sReportfileName, std::vector<std::string> columnNames, std::vector<std::vector<std::wstring>> rowsData)
+    {
+            std::ofstream outputFile(sReportfileName + ".csv", std::ios::app);
+            if (!outputFile.is_open()) {
+                    std::cerr << "Error: Failed to open file." << std::endl;
+                }
+            else
+            {
+                    for(const auto& col: columnNames)
+                    {
+                        outputFile<<col<<"\t";
+                    }
+                    outputFile<< std::endl;
+                     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+                    for (const auto& row : rowsData) 
+                    {
+                        for (const auto& cell : row) {
+                            outputFile<<converter.to_bytes(cell)<<"\t";
+                        }
+                        outputFile<<std::endl;
+                    }
+
+            }
+              outputFile.close();       
+
     }
 
+            
     int getIdenity()
     { 
         int lastInsertedId = -1; // Initialize to -1 to indicate no ID was retrieved        
@@ -310,7 +437,9 @@ public:
 };
 
 
+
 Database* Database::instance = nullptr;
+
 
 class User
 {
@@ -543,8 +672,6 @@ public:
         }
                     
     } 
-    
-
 };
 
 class Video
@@ -951,6 +1078,47 @@ public:
     }
 };
 
+class Reports
+{
+public:
+    // Define the mapReports member variable
+    std::map<std::string, std::string> mapReports;
+
+    // Constructor
+    Reports() {
+        // Initialize mapReports with the desired values
+        mapReports["Customers"] = "Select * from Customers;";
+        mapReports["Employees"] = "Select * from Users;";
+        mapReports["Video"] = "Select  * from Video;";
+        mapReports["TrMaster"] = "Select  * from TransactionMaster;";
+        mapReports["TrDetails"] = "Select  * from TransactionDetails;";
+    }
+    void DisplayAll(int Report_SrNo)
+    {
+   
+         std::string sqlStmtSelete = "select * from Users;";  //default
+         std::string sReportfileName="Users"; //default
+        // Iterate through the map to find the element at the specified index
+        int currentIndex = 0;
+        for (auto it = mapReports.begin(); it != mapReports.end(); ++it) {
+            if (currentIndex == Report_SrNo) {
+              sqlStmtSelete  = it->second;
+              sReportfileName = it->first;
+                break;
+            }
+            currentIndex++;
+        }
+        Database* DB = Database::getInstance();
+        try {
+            std::cout<<"Part 1:" + sqlStmtSelete;
+            DB->Database_DisplayAll(sqlStmtSelete,sReportfileName);
+         }
+        catch (const std::exception& e) {
+            std::cerr << "Reports DisplayAll: Error: " << e.what() << std::endl;
+        }
+    }
+
+};
 
 int main()
 {
@@ -961,13 +1129,26 @@ int main()
         std::cout << "1. User Management" << std::endl;
         std::cout << "2. Customer Management" << std::endl;
         std::cout << "3. Video Management "<<std::endl;
-        std::cout <<" 4. Invoice/Transaciton"<<std::endl;
+        std::cout << "4. Invoice/Transaciton"<<std::endl;
+        std::cout << "5. Reports"<<std::endl;
         
         std::cout << "Enter your Option: ";
         std::cin >> Option;
 
         switch (Option)
         {
+            case 5: //Reports 
+            {
+                Reports objReports;
+                int iSrNo=0;
+                for (const auto& report :  objReports.mapReports) {
+                   std::cout<<iSrNo++<<" "<<"Key:"<< report.first << "  Value:" << report.second <<std::endl;
+                }
+                std::cout<<std::endl<<"Select Reports Index No "<<std::endl;
+                cin>>iSrNo;
+                objReports.DisplayAll(iSrNo);
+            }    
+            break;
             case 4: //Invoice/Transaction 
             {
                     TransactionMaster master;
