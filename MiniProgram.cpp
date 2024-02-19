@@ -373,6 +373,7 @@ public:
                 }
             else
             {
+                    std::cout<<"Report File Created:" +sReportfileName + ".csv"<<std::endl;
                     for(const auto& col: columnNames)
                     {
                         outputFile<<col<<"\t";
@@ -1117,6 +1118,24 @@ public:
             std::cerr << "Reports DisplayAll: Error: " << e.what() << std::endl;
         }
     }
+    void CustomReportDisplayAll()
+    {
+         std::string sqlStmtSelete = "select * from Users;";  //default
+         std::string sReportfileName="Users"; //default
+         std::cout<<std::endl<<"Enter SQL Statement for Custom Report:";
+         std::cin.ignore();
+         getline(std::cin, sqlStmtSelete);
+         std::cout<<"Enter Report FileName:";
+         std::cin>>sReportfileName;
+         Database* DB = Database::getInstance();
+         try {
+           DB->Database_DisplayAll(sqlStmtSelete,sReportfileName);
+         }
+        catch (const std::exception& e) {
+            std::cerr << "Reports CustomReportDisplayAll: Error: " << e.what() << std::endl;
+        }
+
+    }
 
 };
 
@@ -1130,14 +1149,16 @@ int main()
         std::cout << "2. Customer Management" << std::endl;
         std::cout << "3. Video Management "<<std::endl;
         std::cout << "4. Invoice/Transaciton"<<std::endl;
-        std::cout << "5. Reports"<<std::endl;
+        std::cout << "5. Standard Reports"<<std::endl;
+        std::cout << "6. Custom Reports"<<std::endl;
+        
         
         std::cout << "Enter your Option: ";
         std::cin >> Option;
 
         switch (Option)
         {
-            case 5: //Reports 
+            case 5: //Standard Reports 
             {
                 Reports objReports;
                 int iSrNo=0;
@@ -1147,6 +1168,14 @@ int main()
                 std::cout<<std::endl<<"Select Reports Index No "<<std::endl;
                 cin>>iSrNo;
                 objReports.DisplayAll(iSrNo);
+
+            }    
+            break;
+            case 6: //Custom Reports 
+            {
+                Reports objReports;
+                objReports.CustomReportDisplayAll();
+
             }    
             break;
             case 4: //Invoice/Transaction 
