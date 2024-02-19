@@ -382,14 +382,17 @@ public:
                     std::cout<<"Report File Created:" +sReportfileName + ".csv"<<std::endl;
                     for(const auto& col: columnNames)
                     {
-                        outputFile<<col<<"\t";
+                        outputFile<<col;
+                        outputFile<<"\t";
+                        
                     }
                     outputFile<< std::endl;
                      std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
                     for (const auto& row : rowsData) 
                     {
                         for (const auto& cell : row) {
-                            outputFile<<converter.to_bytes(cell)<<"\t";
+                            outputFile<<converter.to_bytes(cell);
+                            outputFile<<"\t";
                         }
                         outputFile<<std::endl;
                     }
