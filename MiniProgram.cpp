@@ -13,7 +13,7 @@
 #include <regex>  // For Regular Expression Validation (Utility Class)
 #include <ctime>
 #include <map>
-
+#include <shellapi.h>  // For Printer
 
 using namespace std;
 
@@ -79,6 +79,18 @@ class CUtility
                 std::string command = "start " + sFileName;
                 std::system(command.c_str());
         }
+        static void Printing(std::string sFileName)
+        {
+         
+            HINSTANCE result = ShellExecuteA(NULL, "print", sFileName.c_str(), NULL, NULL, SW_HIDE);
+            if (result > reinterpret_cast<HINSTANCE>(32)) {
+                std::cout << "Printing started successfully.\n";
+            } else {
+                std::cerr << "Printing failed. Error code:\n";
+            std::cout<<result;
+            }
+        }
+        
 };
 
 class Logger {
@@ -239,7 +251,7 @@ public:
              
             if (retcode_stmt == SQL_SUCCESS || retcode_stmt == SQL_SUCCESS_WITH_INFO) 
             {
-                 std::cout<<"Part 2:"<<std::endl;    
+               
                /*
                 SQLWCHAR SelectUserID[50];
                 SQLWCHAR Selectname[50];
@@ -331,6 +343,7 @@ public:
                 
                     generateReportFile(sRepoprtFileName,columnNames,rowsData);
                     CUtility::OpenFileinBrowser(sRepoprtFileName+".csv");
+                    CUtility::Printing(sRepoprtFileName+".csv");
                 }
                 else{
                     
@@ -1082,6 +1095,7 @@ public:
             }
             outputFile.close();
             CUtility::OpenFileinBrowser(fileName);
+            CUtility::Printing(fileName);
             std::cout << "Invoice generated successfully and saved as: " << fileName << std::endl;
         } else {
             std::cerr << "Unable to open file: " << fileName << std::endl;
@@ -1121,7 +1135,7 @@ public:
         }
         Database* DB = Database::getInstance();
         try {
-            std::cout<<"Part 1:" + sqlStmtSelete;
+         
             DB->Database_DisplayAll(sqlStmtSelete,sReportfileName);
          }
         catch (const std::exception& e) {
